@@ -4,11 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import Book from "./Book";
-import Closeup from "./Closeup";
-import { SPOTS } from "@/lib/spots";
 import { HandArrow, HandUnderline } from "./Hand";
 import { N, logicalOf, physicalOf } from "@/lib/fold";
-import { ROOMS } from "@/lib/rooms";
+import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
 import { buildTextures, type BookTextures } from "@/lib/textures";
 
@@ -18,7 +16,7 @@ export default function Experience() {
   const [tex, setTex] = useState<BookTextures | null>(null);
   const [room, setRoom] = useState(0); // logical index
   const [open, setOpen] = useState(false);
-  const [writing, setWriting] = useState<{ room: string; spot: string } | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const drag = useRef({ x: 0, startX: 0, active: false });
 
   // Draw every surface once the handwriting font is ready.
@@ -30,7 +28,12 @@ export default function Experience() {
       } catch {
         /* fall back to whatever cursive font is around */
       }
-      if (alive) setTex(buildTextures(`${FONT}, cursive`));
+      try {
+        const t = await buildTextures(`${FONT}, cursive`);
+        if (alive) setTex(t);
+      } catch (err) {
+        console.error(err);
+      }
     })();
     return () => {
       alive = false;
@@ -48,9 +51,19 @@ export default function Experience() {
     setOpen(v);
   }, []);
 
+  // Coming back from the game (browser back): undo the move into the painting.
+  useEffect(() => {
+    const onShow = () => {
+      book.zoomTarget = 0;
+      setLeaving(false);
+    };
+    window.addEventListener("pageshow", onShow);
+    return () => window.removeEventListener("pageshow", onShow);
+  }, []);
+
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
-      if (writing) return; // the journal sheet handles its own keys
+      if (leaving) return;
       if (ev.key === "ArrowRight") {
         if (!open) setBookOpen(true);
         else goTo(room + 1);
@@ -65,7 +78,7 @@ export default function Experience() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, room, goTo, setBookOpen, writing]);
+  }, [open, room, goTo, setBookOpen, leaving]);
 
   // Drag sideways to page through: content follows your finger.
   const onDown = (ev: React.PointerEvent) => {
@@ -107,10 +120,13 @@ export default function Experience() {
           <Canvas orthographic flat linear dpr={[1, 2]} camera={{ position: [0, 2, 10], zoom: 200, near: 0.1, far: 100 }} gl={{ alpha: true, antialias: true }}>
             <Book
               tex={tex}
-              onSpot={(li, spot) => {
-                // move in on the spot, then open its close-up
+              onSpot={(li) => {
+                // move in on the spot, then step into the painting
+                const href = ROOMS[li]?.href;
+                if (!href) return;
                 book.zoomTarget = 1;
-                setTimeout(() => setWriting({ room: ROOMS[li].name, spot }), 380);
+                setLeaving(true);
+                window.setTimeout(() => window.location.assign(href), 650);
               }}
             />
             <ContactShadows position={[0, -0.04, 0]} scale={5} resolution={512} far={1.4} blur={2.4} opacity={0.32} color="#2a2350" frames={Infinity} />
@@ -120,7 +136,7 @@ export default function Experience() {
       </div>
 
       <button
-        className={`arrow arrow-left ${open ? "" : "is-off"} ${writing ? "is-hidden" : ""}`}
+        className={`arrow arrow-left ${open ? "" : "is-off"} ${leaving ? "is-hidden" : ""}`}
         aria-label={room === 0 ? "Close the book" : "Previous room"}
         onClick={() => (room === 0 ? setBookOpen(false) : goTo(room - 1))}
         disabled={!open}
@@ -145,17 +161,6 @@ export default function Experience() {
           <div className="room-mood">tap the cover to open</div>
         )}
       </footer>
-      {writing && SPOTS[writing.room]?.[writing.spot] && (
-        <Closeup
-          room={writing.room}
-          spotKey={writing.spot}
-          spot={SPOTS[writing.room][writing.spot]}
-          onClose={() => {
-            setWriting(null);
-            book.zoomTarget = 0;
-          }}
-        />
-      )}
     </main>
   );
 }

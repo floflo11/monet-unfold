@@ -419,6 +419,16 @@ export class Sketch {
     this.stroke(pts, { w: 2, ...o, closed: true });
   }
 
+  /** Paint a picture onto the wash (it shows once the surface is coloured in). */
+  image(img: CanvasImageSource, x: number, y: number, w: number, h: number) {
+    const c = this.wash;
+    c.save();
+    c.globalCompositeOperation = "source-over";
+    c.globalAlpha = 1;
+    c.drawImage(img, x * this.S, y * this.S, w * this.S, h * this.S);
+    c.restore();
+  }
+
   /** Watercolour wash over the whole sheet. */
   washAll(color: string, alpha = 0.85) {
     this.fill(this.rectPts(-0.02, -0.02, 1.04, 1.04), color, { alpha, jitter: 0 });

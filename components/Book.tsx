@@ -8,7 +8,7 @@ import * as THREE from "three";
 import type { Line2 } from "three-stdlib";
 import { H, L, N, dirOf, floorApex, focusAngle, focusOf, logicalOf, normalOf, pageAngles, roomOpenness, smooth } from "@/lib/fold";
 import { makePaperMaterial, INK } from "@/lib/paperMaterial";
-import { ROOMS } from "@/lib/rooms";
+import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
 import type { BookTextures } from "@/lib/textures";
 
@@ -223,8 +223,9 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       const rb = k === 0 ? 1 : focusOf(k - 1, f) * e;
       m.front.uniforms.uReveal.value = rf;
       m.back.uniforms.uReveal.value = rb;
-      m.front.uniforms.uInkAmt.value = k === N ? 1 : 0.55 + 0.45 * rf;
-      m.back.uniforms.uInkAmt.value = k === 0 ? 1 : 0.55 + 0.45 * rb;
+      // painted walls: the traced line drawing shows while folded away, then gives way to the paint
+      m.front.uniforms.uInkAmt.value = k === N ? 1 : 0.8 - 0.7 * rf;
+      m.back.uniforms.uInkAmt.value = k === 0 ? 1 : 0.8 - 0.7 * rb;
     }
 
     // floors + pop-ups
@@ -247,7 +248,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       floors[p].geo.computeBoundingSphere();
       const fr = focusOf(p, f) * e;
       floors[p].mat.uniforms.uReveal.value = fr;
-      floors[p].mat.uniforms.uInkAmt.value = 0.5 + 0.5 * fr;
+      floors[p].mat.uniforms.uInkAmt.value = 0.7 - 0.62 * fr;
 
       const line = floorLineRefs.current[p];
       if (line) {
@@ -278,6 +279,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
         r.hinge.scale.y = 0.9 + 0.1 * vis;
         pu.mat.uniforms.uOpacity.value = vis;
         pu.mat.uniforms.uReveal.value = fr;
+        pu.mat.uniforms.uInkAmt.value = 0.9 - 0.75 * fr;
       });
     }
 

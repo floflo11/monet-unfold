@@ -1,3 +1,28 @@
+# Monet Canvas: a pop-up book
+
+A remix of [**unfold** by Dakshie](https://github.com/Dksie09/unfold) (MIT), the hand-drawn
+carousel pop-up book. Her book mechanics are kept exactly as she built them: the pages fanning
+from one spine, the creased floor that folds itself away, the pop-up cards, the camera, the paper
+shader and the controls. Only the contents changed: the four rooms now hold Monet's world from
+[Monet Canvas: The Artist's Garden at Vétheuil](https://www.monetcanvas.com), the painted 3D game.
+
+| Room | What stands in it | The spot |
+|------|-------------------|----------|
+| The poppy field | a poplar, Camille with her blue parasol, little Michel, a row of poppies | Camille |
+| The garden | sunflowers, the blue-and-white pots, Michel and his dog, with the house and steps behind | Michel |
+| The house | the papered wall with the gilt-framed Poppy Field, herringbone parquet, Michel from behind | the painting |
+| The pond | the row of easels, Papa (Claude Monet), the willows and the green footbridge | Papa |
+
+Each surface is a painted image cut from the game, packed in the same texture layout as her
+`bake()` (colour wash in rgb, cut-out mask and a light traced line drawing in alpha), so her shader
+still shows a folded room as a drawing and washes the paint in when it comes to the front.
+Clicking a room's spot moves the camera in, as her journal spots do, and then steps into the
+painting: it opens the game at that place. The writing close-ups are not used in this version.
+
+Thank you, Dakshie, for making unfold and sharing it. Her original README follows.
+
+---
+
 # unfold
 
 A journal you keep inside a hand-drawn pop-up book. Open the cover and the rooms of a little house

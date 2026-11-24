@@ -4,8 +4,8 @@ import "@fontsource/caveat/700.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "unfold — a journal house",
-  description: "A hand-drawn pop-up journal: a book of rooms that fold open.",
+  title: "Monet Canvas: a pop-up book",
+  description: "Monet's garden at Vétheuil as a pop-up book: a remix of unfold by Dakshie. Open a room and step into the painting.",
 };
 
 export const viewport: Viewport = {
