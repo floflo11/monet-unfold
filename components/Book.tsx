@@ -199,6 +199,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
   const outlineRefs = useRef<(Line2 | null)[]>([]);
   const popRefs = useRef<{ outer: THREE.Group | null; hinge: THREE.Group | null }[][]>(Array.from({ length: N }, () => []));
   const target = useMemo(() => new THREE.Vector3(), []);
+  const coverRefs = useRef<{ front: THREE.Mesh | null; back: THREE.Mesh | null }>({ front: null, back: null });
 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 20);
@@ -219,6 +220,14 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       g.rotation.y = -phi[k];
       g.position.set(n[0] * off, 0, n[2] * off);
       const m = pageMats[k];
+      // once the book has opened all the way round, the two covers meet back to back: hide them,
+      // and the last page's outline, which would sit right on top of the first page's
+      if (k === N) {
+        if (coverRefs.current.front) coverRefs.current.front.visible = book.open < 0.97;
+        const ol = outlineRefs.current[N];
+        if (ol) ol.visible = book.open < 0.97;
+      }
+      if (k === 0 && coverRefs.current.back) coverRefs.current.back.visible = book.open < 0.97;
       const rf = k === N ? 1 : focusOf(k, f) * e;
       const rb = k === 0 ? 1 : focusOf(k - 1, f) * e;
       m.front.uniforms.uReveal.value = rf;
@@ -263,7 +272,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       const open = roomOpenness(phi, p);
       // Pop-ups are drawn for the fully open room seen head-on, so they only appear once the
       // room has settled at a right angle and fade out as soon as it starts to fold.
-      const rise = smooth((open - 0.965) / 0.035) * smooth((book.open - 0.96) / 0.04);
+      const rise = smooth((open - 0.965) / 0.035) * smooth((book.open - 0.96) / 0.04) * smooth((focusOf(p, f) - 0.9) / 0.1);
       const mid = (a + b) / 2;
       const dA = dirOf(a);
       const dB = dirOf(b);
@@ -312,8 +321,8 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
     <group>
       {pageMats.map((m, k) => (
         <group key={k} ref={(el) => void (pageRefs.current[k] = el)}>
-          <mesh geometry={pageGeo.front} material={m.front} />
-          <mesh geometry={pageGeo.back} material={m.back} />
+          <mesh geometry={pageGeo.front} material={m.front} ref={k === N ? (el) => void (coverRefs.current.front = el) : undefined} />
+          <mesh geometry={pageGeo.back} material={m.back} ref={k === 0 ? (el) => void (coverRefs.current.back = el) : undefined} />
           {hots.front[k].map(({ room, hot }) => (
             <Hotspot key={`f${hot.spot}`} hot={hot} room={room} onPick={pick(room)} />
           ))}

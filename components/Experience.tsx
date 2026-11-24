@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import Book from "./Book";
 import { HandArrow, HandUnderline } from "./Hand";
-import { N, logicalOf, physicalOf } from "@/lib/fold";
+import { logicalOf } from "@/lib/fold";
 import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
 import { buildTextures, type BookTextures } from "@/lib/textures";
@@ -45,10 +45,11 @@ export default function Experience() {
     };
   }, []);
 
-  const goTo = useCallback((logical: number) => {
-    const li = Math.max(0, Math.min(N - 1, logical));
-    book.target = physicalOf(li);
-    setRoom(li);
+  // Step round the circle: +1 = next room. The target keeps counting so the book always
+  // turns the short way, and wraps from the last room back to the first.
+  const step = useCallback((dir: number) => {
+    book.target = Math.round(book.target) - dir;
+    setRoom(logicalOf(book.target));
   }, []);
 
   const setBookOpen = useCallback((v: boolean) => {
@@ -71,19 +72,16 @@ export default function Experience() {
       if (leaving) return;
       if (ev.key === "ArrowRight") {
         if (!open) setBookOpen(true);
-        else goTo(room + 1);
+        else step(1);
       } else if (ev.key === "ArrowLeft") {
-        if (open) {
-          if (room === 0) setBookOpen(false);
-          else goTo(room - 1);
-        }
+        if (open) step(-1);
       } else if (ev.key === "Enter" || ev.key === " ") {
         setBookOpen(!open);
       } else if (ev.key === "Escape") setBookOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, room, goTo, setBookOpen, leaving]);
+  }, [open, step, setBookOpen, leaving]);
 
   // Drag sideways to page through: content follows your finger.
   const onDown = (ev: React.PointerEvent) => {
@@ -95,7 +93,7 @@ export default function Experience() {
     if (!drag.current.active || !open) return;
     const dx = ev.clientX - drag.current.x;
     drag.current.x = ev.clientX;
-    book.f = Math.max(0, Math.min(N - 1, book.f + dx / 170));
+    book.f += dx / 170;
   };
   const onUp = (ev: React.PointerEvent) => {
     if (!drag.current.active) return;
@@ -106,7 +104,8 @@ export default function Experience() {
       return;
     }
     book.dragging = false;
-    goTo(logicalOf(Math.round(book.f)));
+    book.target = Math.round(book.f);
+    setRoom(logicalOf(book.target));
   };
 
   const current = ROOMS[room];
@@ -154,17 +153,16 @@ export default function Experience() {
         <>
       <button
         className={`arrow arrow-left ${open ? "" : "is-off"} ${leaving ? "is-hidden" : ""}`}
-        aria-label={room === 0 ? "Close the book" : "Previous room"}
-        onClick={() => (room === 0 ? setBookOpen(false) : goTo(room - 1))}
+        aria-label="Previous room"
+        onClick={() => step(-1)}
         disabled={!open}
       >
         <HandArrow flip />
       </button>
       <button
-        className={`arrow arrow-right ${!open || room < N - 1 ? "" : "is-off"}`}
+        className={`arrow arrow-right ${leaving ? "is-hidden" : ""}`}
         aria-label={open ? "Next room" : "Open the book"}
-        onClick={() => (open ? goTo(room + 1) : setBookOpen(true))}
-        disabled={open && room === N - 1}
+        onClick={() => (open ? step(1) : setBookOpen(true))}
       >
         <HandArrow />
       </button>
