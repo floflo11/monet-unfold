@@ -17,6 +17,11 @@ export default function Experience() {
   const [room, setRoom] = useState(0); // logical index
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  // ?film: canvas keeps its drawing buffer (for frame capture) and the chrome is hidden; captions stay
+  const [film, setFilm] = useState<boolean | null>(null);
+  useEffect(() => {
+    setFilm(new URLSearchParams(window.location.search).has("film"));
+  }, []);
   const drag = useRef({ x: 0, startX: 0, active: false });
 
   // Draw every surface once the handwriting font is ready.
@@ -107,17 +112,27 @@ export default function Experience() {
   const current = ROOMS[room];
 
   return (
-    <main className="stage">
+    <main className={`stage${film ? " is-film" : ""}`}>
       <header className="topbar">
-        <div className="wordmark">
-          unfold
-          <HandUnderline />
-        </div>
+        {!film && (
+          <div className="wordmark">
+            unfold
+            <HandUnderline />
+            <div className="wordmark-sub">a Monet Canvas remix</div>
+          </div>
+        )}
       </header>
 
       <div className="canvas-wrap" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onDoubleClick={() => setBookOpen(!open)}>
-        {tex && (
-          <Canvas orthographic flat linear dpr={[1, 2]} camera={{ position: [0, 2, 10], zoom: 200, near: 0.1, far: 100 }} gl={{ alpha: true, antialias: true }}>
+        {tex && film !== null && (
+          <Canvas
+            orthographic
+            flat
+            linear
+            dpr={[1, 2]}
+            camera={{ position: [0, 2, 10], zoom: 200, near: 0.1, far: 100 }}
+            gl={film ? { alpha: true, antialias: true, preserveDrawingBuffer: true } : { alpha: true, antialias: true }}
+          >
             <Book
               tex={tex}
               onSpot={(li) => {
@@ -135,6 +150,8 @@ export default function Experience() {
         {!tex && <div className="loading">sharpening pencils…</div>}
       </div>
 
+      {!film && (
+        <>
       <button
         className={`arrow arrow-left ${open ? "" : "is-off"} ${leaving ? "is-hidden" : ""}`}
         aria-label={room === 0 ? "Close the book" : "Previous room"}
@@ -151,6 +168,8 @@ export default function Experience() {
       >
         <HandArrow />
       </button>
+        </>
+      )}
 
       <footer className="caption">
         {open ? (
@@ -158,7 +177,7 @@ export default function Experience() {
             <div className="room-name">{current.name}</div>
           </>
         ) : (
-          <div className="room-mood">tap the cover to open</div>
+          !film && <div className="room-mood">tap the cover to open</div>
         )}
       </footer>
     </main>

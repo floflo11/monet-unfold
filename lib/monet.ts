@@ -14,6 +14,7 @@
 // Pop-up positions are [s, t]: s = distance along the right wall, t = along the left wall.
 
 import type { Pt, Sketch } from "./sketch";
+import { PIECES } from "./pieces";
 
 export type Rect = [number, number, number, number];
 
@@ -37,6 +38,16 @@ const at = (depth: number, x: number): [number, number] => [depth / 2 + SQ * x, 
 
 const M = "/monet/";
 
+/**
+ * A die-cut piece, sized by how tall it should stand (in wall heights).
+ * PIECES knows how much of its square card each piece fills, so `h` is the height of the drawing itself.
+ */
+function pop(name: keyof typeof PIECES, h: number, depth: number, x: number, clickable = false): MonetPopUp {
+  const [, fh, mark] = PIECES[name];
+  return { src: `${M}pop-${name}.webp`, size: h / fh, at: at(depth, x), mark: clickable ? mark : undefined };
+}
+
+// Pieces are listed back to front: they rise in that order when a room opens.
 export const MONET_ROOMS: MonetRoom[] = [
   {
     name: "the poppy field",
@@ -45,10 +56,13 @@ export const MONET_ROOMS: MonetRoom[] = [
     right: `${M}poppies-right.webp`,
     floor: `${M}poppies-floor.webp`,
     popups: [
-      { src: `${M}pop-tree.webp`, size: 0.72, at: at(0.5, -0.3) },
-      { src: `${M}pop-camille.webp`, size: 0.62, at: at(0.85, 0.2), mark: [0.18, 0.02, 0.82, 1.0] },
-      { src: `${M}pop-boy.webp`, size: 0.26, at: at(1.08, -0.18) },
-      { src: `${M}pop-row.webp`, size: 0.72, at: at(1.45, 0) },
+      pop("p-house", 0.13, 0.5, 0.16),
+      pop("p-tree", 0.74, 0.56, -0.13),
+      pop("p-pair", 0.12, 0.72, 0.3),
+      pop("p-row1", 0.26, 0.95, -0.04),
+      pop("p-camille", 0.58, 1.1, 0.2, true),
+      pop("p-boy", 0.36, 1.24, -0.22),
+      pop("p-row2", 0.2, 1.36, 0.02),
     ],
   },
   {
@@ -58,10 +72,14 @@ export const MONET_ROOMS: MonetRoom[] = [
     right: `${M}garden-right.webp`,
     floor: `${M}garden-floor.webp`,
     popups: [
-      { src: `${M}pop-sunflowers.webp`, size: 0.55, at: at(0.5, 0.26) },
-      { src: `${M}pop-pot1.webp`, size: 0.45, at: at(0.68, -0.3) },
-      { src: `${M}pop-michel.webp`, size: 0.46, at: at(1.0, 0.02), mark: [0.21, 0.02, 0.79, 1.0] },
-      { src: `${M}pop-pot2.webp`, size: 0.18, at: at(1.35, 0.24) },
+      pop("g-steps", 0.26, 0.48, 0),
+      pop("g-sun1", 0.52, 0.62, -0.19),
+      pop("g-sun2", 0.38, 0.76, 0.27),
+      pop("g-camille", 0.56, 0.96, 0.08),
+      pop("g-pot1", 0.19, 1.06, -0.33),
+      pop("g-michel", 0.36, 1.2, -0.12, true),
+      pop("g-pot2", 0.17, 1.3, 0.28),
+      pop("g-nasturtium", 0.15, 1.5, -0.04),
     ],
   },
   {
@@ -70,8 +88,15 @@ export const MONET_ROOMS: MonetRoom[] = [
     left: `${M}house-left.webp`,
     right: `${M}house-right.webp`,
     floor: `${M}house-floor.webp`,
-    rightMark: [0.293, 0.186, 0.879, 0.64],
-    popups: [{ src: `${M}pop-michel-back.webp`, size: 0.36, at: at(1.0, -0.05) }],
+    popups: [
+      pop("h-console", 0.38, 0.5, -0.15),
+      pop("h-easel", 0.54, 0.74, 0.2, true),
+      pop("h-chair1", 0.3, 0.94, -0.32),
+      pop("h-table", 0.44, 1.05, -0.03),
+      pop("h-chair2", 0.3, 1.16, 0.3),
+      pop("h-michel", 0.34, 1.3, -0.2),
+      pop("h-dog", 0.16, 1.45, 0.12),
+    ],
   },
   {
     name: "the pond",
@@ -80,8 +105,14 @@ export const MONET_ROOMS: MonetRoom[] = [
     right: `${M}pond-right.webp`,
     floor: `${M}pond-floor.webp`,
     popups: [
-      { src: `${M}pop-easels.webp`, size: 0.56, at: at(0.6, -0.14) },
-      { src: `${M}pop-papa.webp`, size: 0.6, at: at(0.95, 0.24), mark: [0.31, 0.02, 0.69, 1.0] },
+      pop("w-bridge", 0.22, 0.55, 0),
+      pop("w-willow1", 0.74, 0.74, -0.22),
+      pop("w-willow2", 0.5, 0.86, 0.34),
+      pop("w-easels", 0.38, 1.0, 0.1),
+      pop("w-papa", 0.58, 1.14, -0.2, true),
+      pop("w-boat", 0.12, 1.34, 0.18),
+      pop("w-irises", 0.22, 1.44, -0.2),
+      pop("w-reeds", 0.18, 1.55, 0.02),
     ],
   },
 ];

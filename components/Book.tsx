@@ -270,7 +270,9 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       popups[p].forEach((pu, j) => {
         const r = popRefs.current[p][j];
         if (!r?.outer || !r.hinge) return;
-        const vis = smooth((rise - j * 0.3) / (1 - j * 0.3 + 1e-3));
+        // stagger back to front, whatever the number of pieces
+        const d = popups[p].length > 1 ? (0.6 * j) / (popups[p].length - 1) : 0;
+        const vis = smooth((rise - d) / (1 - d + 1e-3));
         r.outer.visible = vis > 0.01;
         const [s, t] = pu.spec.at;
         r.outer.position.set((dA[0] * s + dB[0] * t) * L, 0.001, (dA[2] * s + dB[2] * t) * L);

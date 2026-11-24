@@ -49,6 +49,16 @@ body {
   line-height: 1;
 }
 
+.wordmark-sub {
+  position: absolute;
+  left: 2px;
+  top: calc(100% + 12px);
+  white-space: nowrap;
+  font-size: 18px;
+  font-weight: 500;
+  opacity: 0.62;
+}
+
 .wordmark .underline {
   position: absolute;
   left: -4px;
@@ -152,6 +162,10 @@ body {
   }
   .wordmark {
     font-size: 32px;
+  }
+  .wordmark-sub {
+    font-size: 15px;
+    top: calc(100% + 10px);
   }
   .caption {
     padding: 0 84px 24px;
