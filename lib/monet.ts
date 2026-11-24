@@ -107,8 +107,8 @@ export const MONET_ROOMS: MonetRoom[] = [
     popups: [
       pop("w-willow1", 0.74, 0.74, -0.22),
       pop("w-willow2", 0.5, 0.86, 0.34),
-      pop("w-easels", 0.42, 1.0, 0.1),
-      pop("w-papa", 0.64, 1.14, -0.2, true),
+      pop("w-easels", 0.42, 1.0, 0.17),
+      pop("w-papa", 0.64, 1.14, -0.25, true),
       pop("w-boat", 0.12, 1.34, 0.18),
       pop("w-irises", 0.22, 1.44, -0.2),
       pop("w-reeds", 0.18, 1.55, 0.02),
