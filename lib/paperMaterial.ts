@@ -21,6 +21,7 @@ const fragment = /* glsl */ `
   uniform float uBlankBack; // pop-ups: plain paper on the back
   uniform float uFlat;      // covers: no shading or hatching
   uniform float uOpacity;   // pop-ups fade in
+  uniform float uPure;      // painted surfaces: the room in front shows the paint itself, untouched
   uniform vec3 uInk;
   uniform vec3 uPaper;
   uniform vec3 uLight;
@@ -44,17 +45,20 @@ const fragment = /* glsl */ `
     // paper grain + fibres
     float grain = noise(vUv * 420.0 + uSeed) * 0.6 + noise(vUv * 90.0 - uSeed) * 0.4;
     vec3 col = uPaper * (0.955 + 0.05 * grain);
+    // oil paintings: as the room comes to the front the paper gives way to the paint itself
+    float pure = uPure * uReveal;
+    col = mix(col, vec3(1.0), pure);
 
-    // watercolour wash, multiplied in as the room comes to the front
+    // the paint, multiplied in as the room comes to the front
     col *= mix(vec3(1.0), wash, uReveal);
 
     // soft paper lighting
     float l = abs(dot(normalize(vNormal), uLight));
     // the room in front is lit more evenly, like the reference sketches
-    col *= mix(mix(0.8 + 0.2 * l, 0.92 + 0.08 * l, uReveal), 1.0, uFlat);
+    col *= mix(mix(0.8 + 0.2 * l, mix(0.92 + 0.08 * l, 0.97 + 0.03 * l, uPure), uReveal), 1.0, uFlat * (1.0 - pure));
 
     // pen hatching on faces turned away from the light
-    float dark = clamp((0.78 - l) / 0.45, 0.0, 1.0) * (1.0 - 0.85 * uReveal) * (1.0 - uFlat);
+    float dark = clamp((0.78 - l) / 0.45, 0.0, 1.0) * (1.0 - mix(0.85, 1.0, uPure) * uReveal) * (1.0 - uFlat);
     float s = (vUv.x + vUv.y * 0.55) * 46.0 + sin(vUv.y * 21.0 + uSeed) * 0.18 + noise(vUv * 30.0) * 0.25;
     float d = abs(fract(s) - 0.5);
     float h = smoothstep(0.075, 0.025, d) * dark * 0.34;
@@ -81,6 +85,8 @@ export function makePaperMaterial(tex: THREE.Texture, opts: { side?: THREE.Side;
       uBlankBack: { value: opts.blankBack ? 1 : 0 },
       uOpacity: { value: 1 },
       uFlat: { value: typeof opts.flat === "number" ? opts.flat : opts.flat ? 1 : 0 },
+      // covers are drawn on paper; everything else is paint
+      uPure: { value: opts.flat === true ? 0 : 1 },
       uInk: { value: INK },
       uPaper: { value: PAPER },
       uLight: { value: light },

@@ -95,7 +95,6 @@ export const MONET_ROOMS: MonetRoom[] = [
       pop("h-table", 0.48, 1.05, -0.03),
       pop("h-chair2", 0.34, 1.16, 0.3),
       pop("h-michel", 0.42, 1.3, -0.2),
-      pop("h-dog", 0.21, 1.45, 0.12),
     ],
   },
   {
@@ -105,12 +104,12 @@ export const MONET_ROOMS: MonetRoom[] = [
     right: `${M}pond-right.webp`,
     floor: `${M}pond-floor.webp`,
     popups: [
-      pop("w-willow1", 0.74, 0.74, -0.22),
+      pop("w-willow1", 0.68, 0.74, -0.2),
       pop("w-willow2", 0.5, 0.86, 0.34),
-      pop("w-easels", 0.42, 1.0, 0.17),
+      pop("w-easels", 0.42, 1.0, 0.2),
       pop("w-papa", 0.64, 1.14, -0.25, true),
       pop("w-boat", 0.12, 1.34, 0.18),
-      pop("w-irises", 0.22, 1.44, -0.2),
+      pop("w-irises", 0.24, 1.44, -0.16),
       pop("w-reeds", 0.18, 1.55, 0.02),
     ],
   },
