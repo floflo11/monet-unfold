@@ -228,8 +228,9 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
         if (ol) ol.visible = book.open < 0.97;
       }
       if (k === 0 && coverRefs.current.back) coverRefs.current.back.visible = book.open < 0.97;
-      const rf = k === N ? 1 : focusOf(k, f) * e;
-      const rb = k === 0 ? 1 : focusOf(k - 1, f) * e;
+      // every room is painted once the book stands open all the way round
+      const rf = k === N ? 1 : e;
+      const rb = k === 0 ? 1 : e;
       m.front.uniforms.uReveal.value = rf;
       m.back.uniforms.uReveal.value = rb;
       // painted walls: the traced line drawing shows while folded away, then gives way to the paint
@@ -255,7 +256,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       pos.needsUpdate = true;
       floors[p].geo.computeVertexNormals();
       floors[p].geo.computeBoundingSphere();
-      const fr = focusOf(p, f) * e;
+      const fr = e;
       floors[p].mat.uniforms.uReveal.value = fr;
       floors[p].mat.uniforms.uInkAmt.value = 0.7 - 0.7 * fr;
 
