@@ -57,7 +57,7 @@ export const MONET_ROOMS: MonetRoom[] = [
     floor: `${M}poppies-floor.webp`,
     popups: [
       pop("p-house", 0.13, 0.5, 0.16),
-      pop("p-tree", 0.74, 0.56, -0.13),
+      pop("p-tree", 0.7, 0.56, -0.22),
       pop("p-pair", 0.12, 0.72, 0.3),
       pop("p-row1", 0.26, 0.95, -0.04),
       pop("p-camille", 0.58, 1.1, 0.2, true),
