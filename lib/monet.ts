@@ -18,7 +18,30 @@ import { PIECES } from "./pieces";
 
 export type Rect = [number, number, number, number];
 
-type MonetPopUp = { src: string; size: number; at: [number, number]; mark?: Rect };
+type Move = ["sway" | "walk" | "hop" | "drift", number, number];
+type MonetPopUp = { src: string; size: number; at: [number, number]; mark?: Rect; move?: Move };
+
+/** How each paper piece moves once its room stands open: kind, size, speed. */
+const MOVES: Record<string, Move> = {
+  "p-tree": ["sway", 0.012, 0.9],
+  "p-pair": ["walk", 0.03, 0.5],
+  "p-row1": ["sway", 0.03, 1.6],
+  "p-camille": ["walk", 0.035, 0.55],
+  "p-boy": ["hop", 0.02, 3.2],
+  "p-row2": ["sway", 0.035, 1.9],
+  "g-sun1": ["sway", 0.025, 1.1],
+  "g-sun2": ["sway", 0.03, 1.3],
+  "g-camille": ["sway", 0.02, 0.9],
+  "g-michel": ["hop", 0.022, 3.4],
+  "g-nasturtium": ["sway", 0.03, 1.7],
+  "h-michel": ["walk", 0.05, 0.8],
+  "w-willow1": ["sway", 0.016, 0.8],
+  "w-willow2": ["sway", 0.02, 0.95],
+  "w-papa": ["sway", 0.018, 1.5],
+  "w-boat": ["drift", 0.05, 0.45],
+  "w-irises": ["sway", 0.03, 1.5],
+  "w-reeds": ["sway", 0.04, 1.8],
+};
 
 export type MonetRoom = {
   name: string;
@@ -44,7 +67,7 @@ const M = "/monet/";
  */
 function pop(name: keyof typeof PIECES, h: number, depth: number, x: number, clickable = false): MonetPopUp {
   const [, fh, mark] = PIECES[name];
-  return { src: `${M}pop-${name}.webp`, size: h / fh, at: at(depth, x), mark: clickable ? mark : undefined };
+  return { src: `${M}pop-${name}.webp`, size: h / fh, at: at(depth, x), mark: clickable ? mark : undefined, move: MOVES[name] };
 }
 
 // Pieces are listed back to front: they rise in that order when a room opens.

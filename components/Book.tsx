@@ -201,7 +201,8 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
   const target = useMemo(() => new THREE.Vector3(), []);
   const coverRefs = useRef<{ front: THREE.Mesh | null; back: THREE.Mesh | null }>({ front: null, back: null });
 
-  useFrame((_, dtRaw) => {
+  useFrame((st, dtRaw) => {
+    const now = st.clock.elapsedTime;
     const dt = Math.min(dtRaw, 1 / 20);
     if (!book.dragging) book.f += (book.target - book.f) * (1 - Math.exp(-dt * 7));
     book.open += (book.openTarget - book.open) * (1 - Math.exp(-dt * 7));
@@ -289,6 +290,29 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
         r.outer.rotation.y = Math.PI / 2 - mid;
         // fade in one layer after another with a small lift
         r.hinge.scale.y = 0.9 + 0.1 * vis;
+        // paper-toy life: figures stroll or hop on their slots, plants lean in the wind
+        const mv = (pu.spec as { move?: [string, number, number] }).move;
+        let rz = 0;
+        let px = 0;
+        let py = 0;
+        if (mv) {
+          const w = now * mv[2] + j * 1.7 + p;
+          if (mv[0] === "sway") rz = Math.sin(w) * mv[1];
+          else if (mv[0] === "walk") {
+            px = Math.sin(w) * mv[1];
+            py = Math.abs(Math.sin(w * 5)) * 0.006;
+            rz = Math.cos(w) * 0.025;
+          } else if (mv[0] === "hop") {
+            py = Math.pow(Math.max(0, Math.sin(w)), 2) * mv[1];
+            rz = Math.sin(w * 0.5) * 0.035;
+          } else if (mv[0] === "drift") {
+            px = Math.sin(w) * mv[1];
+            rz = Math.sin(w * 2.3) * 0.025;
+          }
+        }
+        r.hinge.rotation.z = rz * vis;
+        r.hinge.position.x = px * vis;
+        r.hinge.position.y = py * vis;
         pu.mat.uniforms.uOpacity.value = vis;
         pu.mat.uniforms.uReveal.value = fr;
         pu.mat.uniforms.uInkAmt.value = 0.9 - 0.82 * fr;
