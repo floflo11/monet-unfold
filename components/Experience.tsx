@@ -8,6 +8,7 @@ import { HandArrow, HandUnderline } from "./Hand";
 import { logicalOf } from "@/lib/fold";
 import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
+import { SKIES } from "@/lib/sky";
 import { buildTextures, type BookTextures } from "@/lib/textures";
 
 const FONT = "Caveat";
@@ -17,6 +18,11 @@ export default function Experience() {
   const [room, setRoom] = useState(0); // logical index
   const [open, setOpen] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [light, setLight] = useState(1); // index into SKIES
+  const relight = useCallback((dir: number) => {
+    book.lightTarget = Math.round(book.lightTarget) + dir;
+    setLight((((book.lightTarget % SKIES.length) + SKIES.length) % SKIES.length));
+  }, []);
   // ?film: canvas keeps its drawing buffer (for frame capture) and the chrome is hidden; captions stay
   const [film, setFilm] = useState<boolean | null>(null);
   useEffect(() => {
@@ -73,6 +79,10 @@ export default function Experience() {
       if (ev.key === "ArrowRight") {
         if (!open) setBookOpen(true);
         else step(1);
+      } else if (ev.key === "ArrowUp") {
+        relight(1);
+      } else if (ev.key === "ArrowDown") {
+        relight(-1);
       } else if (ev.key === "ArrowLeft") {
         if (open) step(-1);
       } else if (ev.key === "Enter" || ev.key === " ") {
@@ -81,7 +91,7 @@ export default function Experience() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, step, setBookOpen, leaving]);
+  }, [open, step, setBookOpen, leaving, relight]);
 
   // Drag sideways to page through: content follows your finger.
   const onDown = (ev: React.PointerEvent) => {
@@ -112,6 +122,7 @@ export default function Experience() {
 
   return (
     <main className={`stage${film ? " is-film" : ""}`}>
+      <div className="sky" style={{ backgroundColor: SKIES[light].page }} />
       <header className="topbar">
         {!film && (
           <div className="wordmark">
@@ -167,6 +178,15 @@ export default function Experience() {
         <HandArrow />
       </button>
         </>
+      )}
+
+      {!film && (
+        <button className="sun-btn" aria-label={`Change the light (now ${SKIES[light].name})`} onClick={() => relight(1)}>
+          <svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <circle cx="24" cy="24" r="8.5" />
+            <path d="M24 5v6M24 37v6M5 24h6M37 24h6M10.5 10.5l4.2 4.2M33.3 33.3l4.2 4.2M10.5 37.5l4.2-4.2M33.3 14.7l4.2-4.2" />
+          </svg>
+        </button>
       )}
 
       <footer className="caption">

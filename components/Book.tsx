@@ -10,6 +10,7 @@ import { H, L, N, dirOf, floorApex, focusAngle, focusOf, logicalOf, normalOf, pa
 import { makePaperMaterial, INK } from "@/lib/paperMaterial";
 import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
+import { setSky } from "@/lib/sky";
 import type { BookTextures } from "@/lib/textures";
 
 const PAGE_GAP = 0.014; // thickness between pages when the book is shut
@@ -207,6 +208,9 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
     if (!book.dragging) book.f += (book.target - book.f) * (1 - Math.exp(-dt * 7));
     book.open += (book.openTarget - book.open) * (1 - Math.exp(-dt * 7));
     if (Math.abs(book.openTarget - book.open) < 1e-4) book.open = book.openTarget;
+
+    book.light += (book.lightTarget - book.light) * (1 - Math.exp(-dt * 2.2));
+    setSky(book.light);
 
     const f = book.f;
     const e = smooth(book.open);

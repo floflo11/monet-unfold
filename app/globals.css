@@ -758,3 +758,29 @@ body {
   stroke: #fff;
   stroke-width: 2;
 }
+
+/* the hour of the day: a wash over the page behind the book */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: background-color 1.6s ease;
+}
+
+.sun-btn {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  background: transparent;
+  border: 0;
+  padding: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  z-index: 3;
+  transition: transform 0.2s ease;
+}
+
+.sun-btn:hover {
+  transform: rotate(20deg);
+}

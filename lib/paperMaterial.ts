@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { SKY } from "./sky";
 
 export const INK = new THREE.Color(0.141, 0.263, 0.42); // #24436b, Prussian blue
 const PAPER = new THREE.Color(0.985, 0.979, 0.958);
@@ -25,6 +26,9 @@ const fragment = /* glsl */ `
   uniform vec3 uInk;
   uniform vec3 uPaper;
   uniform vec3 uLight;
+  uniform vec3 uTint;      // the hour: colour of the light
+  uniform vec3 uShade;     // the hour: colour the shadows lean to
+  uniform float uShadeAmt;
   varying vec2 vUv;
   varying vec3 vNormal;
 
@@ -64,6 +68,10 @@ const fragment = /* glsl */ `
     float h = smoothstep(0.075, 0.025, d) * dark * 0.34;
     col = mix(col, uInk, h);
 
+    // the hour of the day: tint the light, lean the darks towards the shadow colour
+    float lum = dot(col, vec3(0.299, 0.587, 0.114));
+    col = mix(col * uTint, uShade, clamp((1.0 - lum) * uShadeAmt, 0.0, 1.0));
+
     // the drawing itself
     col = mix(col, uInk, ink * uInkAmt);
     gl_FragColor = vec4(col, uOpacity);
@@ -90,6 +98,9 @@ export function makePaperMaterial(tex: THREE.Texture, opts: { side?: THREE.Side;
       uInk: { value: INK },
       uPaper: { value: PAPER },
       uLight: { value: light },
+      uTint: SKY.uTint,
+      uShade: SKY.uShade,
+      uShadeAmt: SKY.uShadeAmt,
     },
     transparent: opts.transparent ?? false,
     polygonOffset: true,

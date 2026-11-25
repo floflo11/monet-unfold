@@ -11,6 +11,9 @@ export const book = {
   open: 0,
   openTarget: 0,
   dragging: false,
+  /** position in the day (index into SKIES, keeps counting so the light always moves on) */
+  light: 1,
+  lightTarget: 1,
   /** 0..1, how far the camera has moved in on a journal spot */
   zoom: 0,
   zoomTarget: 0,
