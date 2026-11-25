@@ -199,51 +199,6 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
   const outlineRefs = useRef<(Line2 | null)[]>([]);
   const popRefs = useRef<{ outer: THREE.Group | null; hinge: THREE.Group | null }[][]>(Array.from({ length: N }, () => []));
   const target = useMemo(() => new THREE.Vector3(), []);
-  // ---- the box around the rooms: a lid with the title on it, and sides wrapped in the paintings ----
-  const lidRef = useRef<THREE.Group | null>(null);
-  const lidLineRef = useRef<Line2 | null>(null);
-  const sideRefs = useRef<(THREE.Group | null)[]>([]);
-  const lidPaper = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f5f2ea", transparent: true, side: THREE.DoubleSide }), []);
-  const lidLabel = useMemo(() => {
-    const m = makePaperMaterial(tex.front, { flat: true, transparent: true, seed: 91 });
-    m.uniforms.uReveal.value = 1;
-    return m;
-  }, [tex]);
-  const lidGeo = useMemo(
-    () => ({
-      paper: new THREE.PlaneGeometry(2 * L, 2 * L).rotateX(-Math.PI / 2),
-      label: new THREE.PlaneGeometry(1.3 * L, 1.3 * L).rotateX(-Math.PI / 2).translate(0, 0.003, 0),
-      line: [
-        [-L, 0.002, -L],
-        [L, 0.002, -L],
-        [L, 0.002, L],
-        [-L, 0.002, L],
-        [-L, 0.002, -L],
-      ] as [number, number, number][],
-    }),
-    [],
-  );
-  const sideGeo = useMemo(() => new THREE.PlaneGeometry(L, H).translate(L / 2, H / 2, 0), []);
-  const sides = useMemo(() => {
-    const out: { pos: [number, number, number]; rot: number; mat: THREE.ShaderMaterial }[] = [];
-    for (let p = 0; p < N; p++) {
-      const a = (p * Math.PI) / 2;
-      const dA = dirOf(a);
-      const dB = dirOf(a + Math.PI / 2);
-      const r = tex.rooms[logicalOf(p)];
-      [r.right, r.left].forEach((t, i) => {
-        const mat = makePaperMaterial(t, { side: THREE.DoubleSide, blankBack: true, transparent: true, seed: 60 + p * 2 + i });
-        mat.uniforms.uReveal.value = 1;
-        mat.uniforms.uInkAmt.value = 0;
-        out.push(
-          i === 0
-            ? { pos: [dB[0] * L, 0, dB[2] * L], rot: -a, mat }
-            : { pos: [(dA[0] + dB[0]) * L, 0, (dA[2] + dB[2]) * L], rot: Math.PI / 2 - a, mat },
-        );
-      });
-    }
-    return out;
-  }, [tex]);
   const coverRefs = useRef<{ front: THREE.Mesh | null; back: THREE.Mesh | null }>({ front: null, back: null });
 
   useFrame((st, dtRaw) => {
@@ -255,26 +210,25 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
 
     const f = book.f;
     const e = smooth(book.open);
-    // the rooms always stand in their full circle inside the box; opening lifts the lid and drops the sides
-    const phi = pageAngles(f, 1);
+    const phi = pageAngles(f, book.open);
 
     // pages
     for (let k = 0; k <= N; k++) {
       const g = pageRefs.current[k];
       if (!g) continue;
       const n = normalOf(phi[k]);
-      const off = 0;
+      const off = (k - N / 2) * PAGE_GAP * (1 - e);
       g.rotation.y = -phi[k];
       g.position.set(n[0] * off, 0, n[2] * off);
       const m = pageMats[k];
       // once the book has opened all the way round, the two covers meet back to back: hide them,
       // and the last page's outline, which would sit right on top of the first page's
       if (k === N) {
-        if (coverRefs.current.front) coverRefs.current.front.visible = false;
+        if (coverRefs.current.front) coverRefs.current.front.visible = book.open < 0.97;
         const ol = outlineRefs.current[N];
-        if (ol) ol.visible = false;
+        if (ol) ol.visible = book.open < 0.97;
       }
-      if (k === 0 && coverRefs.current.back) coverRefs.current.back.visible = false;
+      if (k === 0 && coverRefs.current.back) coverRefs.current.back.visible = book.open < 0.97;
       // every room is painted once the book stands open all the way round
       const rf = k === N ? 1 : e;
       const rb = k === 0 ? 1 : e;
@@ -367,33 +321,10 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
 
     // camera: front view of the cover when shut, looking into the focused room when open
     const gF = focusAngle(phi, f);
-    const yaw = gF;
-    const pitch = THREE.MathUtils.degToRad(32);
-
-    // the box: lid lifts off and fades, then the four sides fall outward and fade
-    const lid = lidRef.current;
-    if (lid) {
-      const la = smooth(e / 0.5);
-      const lo = 1 - smooth((e - 0.22) / 0.3);
-      lid.visible = lo > 0.01;
-      lid.position.y = H + 0.004 + 1.3 * la;
-      lid.rotation.y = Math.PI / 2 - gF + 0.5 * la;
-      lidPaper.opacity = lo;
-      lidLabel.uniforms.uOpacity.value = lo;
-      const ll = lidLineRef.current;
-      if (ll) ll.material.opacity = lo;
-    }
-    const fall = smooth((e - 0.12) / 0.5) * (Math.PI / 2 - 0.03);
-    const so = 1 - smooth((e - 0.58) / 0.3);
-    sides.forEach((sd, i) => {
-      const h = sideRefs.current[i];
-      if (!h) return;
-      h.rotation.x = fall;
-      h.visible = so > 0.01;
-      sd.mat.uniforms.uOpacity.value = so;
-    });
+    const yaw = Math.PI / 2 + (gF - Math.PI / 2) * e;
+    const pitch = THREE.MathUtils.degToRad(8 + 24 * e);
     const dF = dirOf(gF);
-    target.set(dF[0] * 0.45 * e, 0.5, dF[2] * 0.45 * e);
+    target.set(L / 2 + (dF[0] * 0.45 - L / 2) * e, H / 2 + (0.5 - H / 2) * e, dF[2] * 0.45 * e);
     // moving in on a journal spot
     book.zoom += (book.zoomTarget - book.zoom) * (1 - Math.exp(-dt * 6));
     const zm = smooth(book.zoom);
@@ -403,9 +334,9 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
     camera.position.set(target.x + Math.cos(yaw) * Math.cos(pitch) * 10, target.y + Math.sin(pitch) * 10, target.z + Math.sin(yaw) * Math.cos(pitch) * 10);
     camera.lookAt(target);
     // tall enough for the folded page stacks, which rise well above the open room
-    const viewH = 3.0 - 0.3 * e;
+    const viewH = 1.7 + 1.0 * e;
     const narrow = size.width < 640;
-    const viewW = (narrow ? 3.1 : 3.3) - (narrow ? 0.75 : 0.2) * e;
+    const viewW = (narrow ? 1.35 : 1.9) + (narrow ? 1.0 : 1.2) * e;
     const ortho = camera as THREE.OrthographicCamera;
     ortho.zoom = Math.min(size.height / viewH, size.width / viewW) * (1 + 2.6 * zm);
     ortho.updateProjectionMatrix();
@@ -413,19 +344,6 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
 
   return (
     <group>
-      <group ref={lidRef}>
-        <mesh geometry={lidGeo.paper} material={lidPaper} />
-        <mesh geometry={lidGeo.label} material={lidLabel} rotation={[0, 0, 0]} />
-        <Line ref={(el) => void (lidLineRef.current = el as unknown as Line2 | null)} points={lidGeo.line} color={INK_HEX} lineWidth={1.7} transparent />
-      </group>
-      {sides.map((sd, i) => (
-        <group key={`side${i}`} position={sd.pos} rotation={[0, sd.rot, 0]}>
-          <group ref={(el) => void (sideRefs.current[i] = el)}>
-            <mesh geometry={sideGeo} material={sd.mat} />
-            <Line points={[[0, 0, 0], [L, 0, 0], [L, H, 0], [0, H, 0], [0, 0, 0]]} color={INK_HEX} lineWidth={1.7} />
-          </group>
-        </group>
-      ))}
       {pageMats.map((m, k) => (
         <group key={k} ref={(el) => void (pageRefs.current[k] = el)}>
           <mesh geometry={pageGeo.front} material={m.front} ref={k === N ? (el) => void (coverRefs.current.front = el) : undefined} />
