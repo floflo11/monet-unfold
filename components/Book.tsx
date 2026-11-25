@@ -202,7 +202,6 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
   // ---- the box around the rooms: a lid with the title on it, and sides wrapped in the paintings ----
   const lidRef = useRef<THREE.Group | null>(null);
   const lidLineRef = useRef<Line2 | null>(null);
-  const labelRef = useRef<THREE.Mesh | null>(null);
   const sideRefs = useRef<(THREE.Group | null)[]>([]);
   const lidPaper = useMemo(() => new THREE.MeshBasicMaterial({ color: "#f5f2ea", transparent: true, side: THREE.DoubleSide }), []);
   const lidLabel = useMemo(() => {
@@ -378,8 +377,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
       const lo = 1 - smooth((e - 0.22) / 0.3);
       lid.visible = lo > 0.01;
       lid.position.y = H + 0.004 + 1.3 * la;
-      lid.rotation.y = 0.5 * la;
-      if (labelRef.current) labelRef.current.rotation.y = Math.PI / 2 - gF;
+      lid.rotation.y = Math.PI / 2 - gF + 0.5 * la;
       lidPaper.opacity = lo;
       lidLabel.uniforms.uOpacity.value = lo;
       const ll = lidLineRef.current;
@@ -417,7 +415,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
     <group>
       <group ref={lidRef}>
         <mesh geometry={lidGeo.paper} material={lidPaper} />
-        <mesh geometry={lidGeo.label} material={lidLabel} ref={labelRef} />
+        <mesh geometry={lidGeo.label} material={lidLabel} rotation={[0, 0, 0]} />
         <Line ref={(el) => void (lidLineRef.current = el as unknown as Line2 | null)} points={lidGeo.line} color={INK_HEX} lineWidth={1.7} transparent />
       </group>
       {sides.map((sd, i) => (
