@@ -10,11 +10,14 @@ import { H, L, N, dirOf, floorApex, focusAngle, focusOf, logicalOf, normalOf, pa
 import { makePaperMaterial, INK } from "@/lib/paperMaterial";
 import { MONET_ROOMS as ROOMS } from "@/lib/monet";
 import { book } from "@/lib/store";
-import { setSky } from "@/lib/sky";
+import { SKY, setSky, skyWeight } from "@/lib/sky";
 import type { BookTextures } from "@/lib/textures";
 
 const PAGE_GAP = 0.014; // thickness between pages when the book is shut
 const INK_HEX = `#${INK.getHexString()}`;
+// what drifts through each room, by logical room: poppy petals, pollen, dust in the sun, light off the water
+const MOTE = ["#e63a26", "#ffd23f", "#fff0b8", "#ffffff"];
+const FIREFLY = new THREE.Color("#eaff7a");
 
 /** Hand-wobbled closed outline in a page's local XY plane. */
 function wobbleRect(seed: number): THREE.Vector3[] {
@@ -200,6 +203,29 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
   const outlineRefs = useRef<(Line2 | null)[]>([]);
   const popRefs = useRef<{ outer: THREE.Group | null; hinge: THREE.Group | null }[][]>(Array.from({ length: N }, () => []));
   const target = useMemo(() => new THREE.Vector3(), []);
+  const motes = useMemo(() => {
+    const n = 80;
+    const base = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      base[i * 4] = 0.08 + 0.84 * Math.random();
+      base[i * 4 + 1] = 0.08 + 0.84 * Math.random();
+      base[i * 4 + 2] = Math.random();
+      base[i * 4 + 3] = Math.random();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 32;
+    const g = cv.getContext("2d")!;
+    const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gr.addColorStop(0, "rgba(255,255,255,1)");
+    gr.addColorStop(0.45, "rgba(255,255,255,0.9)");
+    gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr;
+    g.fillRect(0, 0, 32, 32);
+    const mat = new THREE.PointsMaterial({ size: 11, sizeAttenuation: false, map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false, opacity: 0 });
+    return { n, base, geo, mat };
+  }, []);
   const coverRefs = useRef<{ front: THREE.Mesh | null; back: THREE.Mesh | null }>({ front: null, back: null });
 
   useFrame((st, dtRaw) => {
@@ -211,6 +237,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
 
     book.light += (book.lightTarget - book.light) * (1 - Math.exp(-dt * 2.2));
     setSky(book.light);
+    SKY.uTime.value = now;
 
     const f = book.f;
     const e = smooth(book.open);
@@ -299,13 +326,16 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
         let rz = 0;
         let px = 0;
         let py = 0;
+        let sx = 1;
         if (mv) {
           const w = now * mv[2] + j * 1.7 + p;
           if (mv[0] === "sway") rz = Math.sin(w) * mv[1];
           else if (mv[0] === "walk") {
             px = Math.sin(w) * mv[1];
-            py = Math.abs(Math.sin(w * 5)) * 0.006;
-            rz = Math.cos(w) * 0.025;
+            py = Math.abs(Math.sin(w * 7)) * 0.014;
+            rz = Math.sin(w * 7) * 0.03;
+            // the paper figure turns round at each end of its walk
+            sx = Math.max(-1, Math.min(1, Math.cos(w) * 8));
           } else if (mv[0] === "hop") {
             py = Math.pow(Math.max(0, Math.sin(w)), 2) * mv[1];
             rz = Math.sin(w * 0.5) * 0.035;
@@ -317,10 +347,30 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
         r.hinge.rotation.z = rz * vis;
         r.hinge.position.x = px * vis;
         r.hinge.position.y = py * vis;
+        r.hinge.scale.x = sx;
         pu.mat.uniforms.uOpacity.value = vis;
         pu.mat.uniforms.uReveal.value = fr;
         pu.mat.uniforms.uInkAmt.value = 0.9 - 0.82 * fr;
       });
+    }
+
+    // petals, pollen and sparks of light drifting through the room in front (fireflies after dark)
+    {
+      const pf = ((Math.round(f) % N) + N) % N;
+      const dA = dirOf(phi[pf]);
+      const dB = dirOf(phi[pf + 1]);
+      const pos = motes.geo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < motes.n; i++) {
+        const ph = motes.base[i * 4 + 3];
+        const u = motes.base[i * 4] + 0.06 * Math.sin(now * 0.7 + ph * 20);
+        const v = motes.base[i * 4 + 1] + 0.06 * Math.cos(now * 0.6 + ph * 13);
+        const y = 0.04 + 0.9 * ((motes.base[i * 4 + 2] + now * (0.05 + 0.06 * ph)) % 1);
+        pos.setXYZ(i, (dA[0] * u + dB[0] * v) * L, y * H, (dA[2] * u + dB[2] * v) * L);
+      }
+      pos.needsUpdate = true;
+      const settled = smooth(1 - Math.abs(f - Math.round(f)) * 4);
+      motes.mat.opacity = 0.95 * smooth((book.open - 0.9) / 0.1) * settled;
+      motes.mat.color.set(MOTE[logicalOf(pf)]).lerp(FIREFLY, skyWeight(book.light, 3));
     }
 
     // camera: front view of the cover when shut, looking into the focused room when open
@@ -348,6 +398,7 @@ export default function Book({ tex, onSpot }: { tex: BookTextures; onSpot: (room
 
   return (
     <group>
+      <points geometry={motes.geo} material={motes.mat} frustumCulled={false} />
       {pageMats.map((m, k) => (
         <group key={k} ref={(el) => void (pageRefs.current[k] = el)}>
           <mesh geometry={pageGeo.front} material={m.front} ref={k === N ? (el) => void (coverRefs.current.front = el) : undefined} />

@@ -26,9 +26,12 @@ const fragment = /* glsl */ `
   uniform vec3 uInk;
   uniform vec3 uPaper;
   uniform vec3 uLight;
-  uniform vec3 uTint;      // the hour: colour of the light
-  uniform vec3 uShade;     // the hour: colour the shadows lean to
-  uniform float uShadeAmt;
+  uniform vec3 uTintLo;    // the hour: what the shadows turn to
+  uniform vec3 uTintHi;    // the hour: what the lights turn to
+  uniform float uSat;
+  uniform vec3 uHaze;
+  uniform float uHazeAmt;
+  uniform float uTime;
   varying vec2 vUv;
   varying vec3 vNormal;
 
@@ -69,8 +72,17 @@ const fragment = /* glsl */ `
     col = mix(col, uInk, h);
 
     // the hour of the day: tint the light, lean the darks towards the shadow colour
+    // light drifts across the paint in soft patches, like sun through leaves and passing cloud
+    float dap = smoothstep(0.25, 0.75, noise(vUv * 3.0 + vec2(uTime * 0.13, uTime * 0.08) + uSeed));
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
-    col = mix(col * uTint, uShade, clamp((1.0 - lum) * uShadeAmt, 0.0, 1.0));
+    float lit = clamp(lum * 0.72 + dap * 0.4, 0.0, 1.0);
+    col *= mix(uTintLo, uTintHi, lit);
+    float l2 = dot(col, vec3(0.299, 0.587, 0.114));
+    col = mix(vec3(l2), col, uSat);
+    col = mix(col, uHaze, uHazeAmt * (1.0 - 0.5 * dap));
+    // broken colour: small dabs that flicker between the warm and the cool
+    float dab = noise(vUv * 70.0 + vec2(uTime * 0.5, -uTime * 0.35) + uSeed * 3.0) - 0.5;
+    col += dab * 0.07 * (uTintHi - uTintLo);
 
     // the drawing itself
     col = mix(col, uInk, ink * uInkAmt);
@@ -98,9 +110,12 @@ export function makePaperMaterial(tex: THREE.Texture, opts: { side?: THREE.Side;
       uInk: { value: INK },
       uPaper: { value: PAPER },
       uLight: { value: light },
-      uTint: SKY.uTint,
-      uShade: SKY.uShade,
-      uShadeAmt: SKY.uShadeAmt,
+      uTintLo: SKY.uTintLo,
+      uTintHi: SKY.uTintHi,
+      uSat: SKY.uSat,
+      uHaze: SKY.uHaze,
+      uHazeAmt: SKY.uHazeAmt,
+      uTime: SKY.uTime,
     },
     transparent: opts.transparent ?? false,
     polygonOffset: true,
