@@ -176,7 +176,7 @@ export default function Experience() {
             <div className="room-mood">after Monet, {current.after}</div>
           </>
         ) : (
-          !film && <div className="room-mood">tap the cover to open</div>
+          !film && <div className="room-mood">tap the box to open</div>
         )}
       </footer>
     </main>
