@@ -56,7 +56,8 @@ export default function Experience() {
   const step = useCallback((dir: number) => {
     book.target = Math.round(book.target) - dir;
     setRoom(logicalOf(book.target));
-  }, []);
+    relight(dir); // each turn of the book moves the day on
+  }, [relight]);
 
   const setBookOpen = useCallback((v: boolean) => {
     book.openTarget = v ? 1 : 0;
@@ -114,8 +115,10 @@ export default function Experience() {
       return;
     }
     book.dragging = false;
+    const was = Math.round(book.target);
     book.target = Math.round(book.f);
     setRoom(logicalOf(book.target));
+    if (was !== book.target) relight(was - book.target);
   };
 
   const current = ROOMS[room];
