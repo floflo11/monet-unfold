@@ -45,6 +45,8 @@ const MOVES: Record<string, Move> = {
 
 export type MonetRoom = {
   name: string;
+  /** The Monet painting the room is painted after. */
+  after: string;
   /** Where "step into the painting" takes you. */
   href: string;
   left: string;
@@ -74,6 +76,7 @@ function pop(name: keyof typeof PIECES, h: number, depth: number, x: number, cli
 export const MONET_ROOMS: MonetRoom[] = [
   {
     name: "the poppy field",
+    after: "Poppy Field, 1873",
     href: "https://www.monetcanvas.com/?go=poppies",
     left: `${M}poppies-left.webp`,
     right: `${M}poppies-right.webp`,
@@ -90,6 +93,7 @@ export const MONET_ROOMS: MonetRoom[] = [
   },
   {
     name: "the garden",
+    after: "The Artist's Garden at Vétheuil, 1881",
     href: "https://www.monetcanvas.com/",
     left: `${M}garden-left.webp`,
     right: `${M}garden-right.webp`,
@@ -107,6 +111,7 @@ export const MONET_ROOMS: MonetRoom[] = [
   },
   {
     name: "the house",
+    after: "A Corner of the Apartment, 1875",
     href: "https://www.monetcanvas.com/?go=house",
     left: `${M}house-left.webp`,
     right: `${M}house-right.webp`,
@@ -122,6 +127,7 @@ export const MONET_ROOMS: MonetRoom[] = [
   },
   {
     name: "the pond",
+    after: "Bridge over a Pond of Water Lilies, 1899",
     href: "https://www.monetcanvas.com/?go=pond",
     left: `${M}pond-left.webp`,
     right: `${M}pond-right.webp`,
